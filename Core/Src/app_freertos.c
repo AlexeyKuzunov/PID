@@ -168,7 +168,8 @@ void StartAD7705Task(void *argument)
   /* Infinite loop */
   for(;;)
   {
-	  if (osSemaphoreAcquire(DRDYSemHandle, osWaitForever) == osOK){
+	  //if (osSemaphoreAcquire(DRDYSemHandle, osWaitForever) == osOK){
+	  if(xTaskNotifyWait(0xffffffff, 0xffffffff, NULL, osWaitForever) == pdPASS){
 		  uint16_t t_ad_ish = readADResult(CHN_AIN1);
 	  	 osMessageQueuePut(AD7705QueueHandle, &t_ad_ish, 0, osWaitForever);
 	  	 }
@@ -182,7 +183,8 @@ void StartAD7705Task(void *argument)
 void HAL_GPIO_EXTI_Falling_Callback(uint16_t GPIO_Pin)
 {
 	if(GPIO_Pin == AD_DRDY_Pin) {
-		osSemaphoreRelease(DRDYSemHandle);
+		//osSemaphoreRelease(DRDYSemHandle);
+		xTaskNotifyFromISR(AD7705TaskHandle, 0, eNoAction, pdFALSE);
 	}
 }
 /* USER CODE END Application */
