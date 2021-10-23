@@ -45,7 +45,7 @@ uint16_t readADResult(ChDef channel){
 void AD770Xreset() {
 	HAL_GPIO_WritePin(AD_RESET_GPIO_Port,AD_RESET_Pin, GPIO_PIN_SET);
 	HAL_Delay(5);
-	for(uint8_t i=0;i<5;i++)
+	for(uint8_t i=0;i<5 ;i++)
 	{
 		SPI1_SendByte(0xff);
   }

@@ -7,6 +7,7 @@ extern "C" {
 
 #include "main.h"
 #include "spi.h"
+#include "cmsis_os.h"
 
 #define GAIN 1
 
@@ -15,14 +16,14 @@ extern "C" {
 */
 typedef enum
 {
-	REG_COMM = 0x0,	//communication register 8 bit
+	REG_COMM = 0x0,			//communication register 8 bit
 	REG_SETUP,				//setup register 8 bit
 	REG_CLOCK,				//clock register 8 bit
-	REG_DATA,					//data register 16 bit, contains conversion result
-	REG_TEST,					//test register 8 bit, POR 0x0
-	REG_NOP,					//no operation
+	REG_DATA,				//data register 16 bit, contains conversion result
+	REG_TEST,				//test register 8 bit, POR 0x0
+	REG_NOP,				//no operation
 	REG_OFFSET,				//offset register 24 bit
-	REG_GAIN					// gain register 24 bit
+	REG_GAIN				// gain register 24 bit
 } RegDef;
 
 
@@ -31,7 +32,7 @@ typedef enum
 */
 typedef enum
 {
-	CHN_AIN1 = 0x0,	//AIN1; calibration register pair 0
+	CHN_AIN1 = 0x0,			//AIN1; calibration register pair 0
 	CHN_AIN2,				//AIN2; calibration register pair 1
 	CHN_FULL				//common; calibration register pair 0
 } ChDef;
@@ -63,7 +64,7 @@ typedef enum
 	RATE_50		= 0x4, 	//50Gz
 	RATE_60		= 0x5, 	//60Gz
 	RATE_250	= 0x6, 	//250Gz
-	RATE_500	= 0x7		//500Gz
+	RATE_500	= 0x7	//500Gz
 } RateDef;
 
 /*
@@ -82,9 +83,9 @@ typedef enum
 {
 	MODE_NORMAL = 0x0,					//normal mode
 	MODE_SELF_CAL = 0x1,				//self-calibration
-	MODE_ZERO_SCALE_CAL = 0x2,	//zero-scale system calibration, POR 0x1F4000, 
-															//set FSYNC high before calibration, FSYNC low after calibration
-	MODE_FULL_SCALE_CAL = 0x3		//full-scale system calibration, POR 0x5761AB, set FSYNC high 
+	MODE_ZERO_SCALE_CAL = 0x2,			//zero-scale system calibration, POR 0x1F4000,
+										//set FSYNC high before calibration, FSYNC low after calibration
+	MODE_FULL_SCALE_CAL = 0x3			//full-scale system calibration, POR 0x5761AB, set FSYNC high
 															//before calibration, FSYNC low after calibration
 } ModeDef;
 

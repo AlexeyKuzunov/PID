@@ -97,7 +97,10 @@ int main(void)
   MX_TIM6_Init();
   /* USER CODE BEGIN 2 */
   RetargetInit(&hlpuart1);
-  ad7705_Init(CHN_AIN1, GAIN_64, RATE_500, UNIPOLAR);
+  //ad7705_Init(CHN_AIN1, GAIN_64, RATE_250, UNIPOLAR);
+  //ad7705_Init(CHN_AIN2, GAIN_64, RATE_250, UNIPOLAR);
+  HAL_TIM_Base_Start(&htim6);
+  ds18b20_Init(DS18B20_Resolution_12_bit);
 
   /* USER CODE END 2 */
 
@@ -174,6 +177,11 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
+void delay_us (uint16_t us)
+{
+	__HAL_TIM_SET_COUNTER(&htim6,0);  // set the counter value a 0
+	while (__HAL_TIM_GET_COUNTER(&htim6) < us);  // wait for the counter to reach the us input in the parameter
+}
 
 /* USER CODE END 4 */
 

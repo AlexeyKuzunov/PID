@@ -47,6 +47,13 @@
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN Variables */
 
+uint16_t t_ds_ish;
+
+struct {
+	uint16_t t_ad_1_ish;
+	uint16_t t_ad_2_ish;
+} t_ad;
+
 /* USER CODE END Variables */
 /* Definitions for CalcTask */
 osThreadId_t CalcTaskHandle;
@@ -67,10 +74,15 @@ osMessageQueueId_t AD7705QueueHandle;
 const osMessageQueueAttr_t AD7705Queue_attributes = {
   .name = "AD7705Queue"
 };
-/* Definitions for DRDYSem */
-osSemaphoreId_t DRDYSemHandle;
-const osSemaphoreAttr_t DRDYSem_attributes = {
-  .name = "DRDYSem"
+/* Definitions for DS18B20Timer */
+osTimerId_t DS18B20TimerHandle;
+const osTimerAttr_t DS18B20Timer_attributes = {
+  .name = "DS18B20Timer"
+};
+/* Definitions for ad7705_2_Timer */
+osTimerId_t ad7705_2_TimerHandle;
+const osTimerAttr_t ad7705_2_Timer_attributes = {
+  .name = "ad7705_2_Timer"
 };
 
 /* Private function prototypes -----------------------------------------------*/
@@ -80,6 +92,8 @@ const osSemaphoreAttr_t DRDYSem_attributes = {
 
 void StartCalcTask(void *argument);
 void StartAD7705Task(void *argument);
+void DS18B20Callback(void *argument);
+void ad7705_2_Callback(void *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -97,16 +111,21 @@ void MX_FREERTOS_Init(void) {
   /* add mutexes, ... */
   /* USER CODE END RTOS_MUTEX */
 
-  /* Create the semaphores(s) */
-  /* creation of DRDYSem */
-  DRDYSemHandle = osSemaphoreNew(1, 1, &DRDYSem_attributes);
-
   /* USER CODE BEGIN RTOS_SEMAPHORES */
   /* add semaphores, ... */
   /* USER CODE END RTOS_SEMAPHORES */
 
+  /* Create the timer(s) */
+  /* creation of DS18B20Timer */
+  DS18B20TimerHandle = osTimerNew(DS18B20Callback, osTimerPeriodic, NULL, &DS18B20Timer_attributes);
+
+  /* creation of ad7705_2_Timer */
+  ad7705_2_TimerHandle = osTimerNew(ad7705_2_Callback, osTimerPeriodic, NULL, &ad7705_2_Timer_attributes);
+
   /* USER CODE BEGIN RTOS_TIMERS */
   /* start timers, add new ones, ... */
+  osTimerStart(DS18B20TimerHandle, 2000);
+  osTimerStart(ad7705_2_TimerHandle, 500);
   /* USER CODE END RTOS_TIMERS */
 
   /* Create the queue(s) */
@@ -144,13 +163,14 @@ void MX_FREERTOS_Init(void) {
 void StartCalcTask(void *argument)
 {
   /* USER CODE BEGIN StartCalcTask */
-	uint16_t t_ad_ish;
   /* Infinite loop */
   for(;;)
   {
-	  osMessageQueueGet(AD7705QueueHandle, &t_ad_ish, 0, osWaitForever);
-	  printf("Therm AD7705 ish: %i \n\r", t_ad_ish);
-	  osDelay(500);
+	  osMessageQueueGet(AD7705QueueHandle, &t_ad, 0, osWaitForever);
+	  printf("Therm AD7705 1ch ish: %i \n\r", t_ad.t_ad_1_ish);
+	  printf("Therm AD7705 2ch ish: %i \n\r", t_ad.t_ad_2_ish);
+	  printf("Therm DS18B20 ish: %i \n\r", t_ds_ish);
+	  osDelay(1000);
   }
   /* USER CODE END StartCalcTask */
 }
@@ -165,26 +185,67 @@ void StartCalcTask(void *argument)
 void StartAD7705Task(void *argument)
 {
   /* USER CODE BEGIN StartAD7705Task */
+	const TickType_t xBlockTime = pdMS_TO_TICKS( 500 );
   /* Infinite loop */
+
   for(;;)
   {
 	  //if (osSemaphoreAcquire(DRDYSemHandle, osWaitForever) == osOK){
-	  if(xTaskNotifyWait(0xffffffff, 0xffffffff, NULL, osWaitForever) == pdPASS){
-		  uint16_t t_ad_ish = readADResult(CHN_AIN1);
-	  	 osMessageQueuePut(AD7705QueueHandle, &t_ad_ish, 0, osWaitForever);
-	  	 }
+	  ad7705_Init(CHN_AIN1, GAIN_64, RATE_200, UNIPOLAR);
+	  //if(xTaskNotifyWait(0xffffffff, 0xffffffff, NULL, osWaitForever) == pdPASS)
+	  osDelay(500);
+	  if (ulTaskNotifyTake( pdFALSE,   xBlockTime ) > 0)
+	  {
+		  t_ad.t_ad_1_ish = readADResult(CHN_AIN1);
+	  }
+	  //osDelay(50);
+	  ad7705_Init(CHN_AIN2, GAIN_64, RATE_200, UNIPOLAR);
+	  //if(xTaskNotifyWait(0xffffffff, 0xffffffff, NULL, osWaitForever) == pdPASS)
+	  osDelay(500);
+	  if (ulTaskNotifyTake( pdFALSE,   xBlockTime ) > 0)
+	  {
+		  t_ad.t_ad_2_ish = readADResult(CHN_AIN2);
+	  }
+	  osMessageQueuePut(AD7705QueueHandle, &t_ad, 0, osWaitForever);
 	  osDelay(1);
   }
   /* USER CODE END StartAD7705Task */
+}
+
+/* DS18B20Callback function */
+void DS18B20Callback(void *argument)
+{
+  /* USER CODE BEGIN DS18B20Callback */
+	t_ds_ish = ds18b20_getTemperature();
+  /* USER CODE END DS18B20Callback */
+}
+
+/* ad7705_2_Callback function */
+void ad7705_2_Callback(void *argument)
+{
+  /* USER CODE BEGIN ad7705_2_Callback */
+//	ad7705_Init(CHN_AIN2, GAIN_64, RATE_250, UNIPOLAR);
+//	if(xTaskNotifyWait(0xffffffff, 0xffffffff, NULL, osWaitForever) == pdPASS){
+//		t_ad_2_ish = readADResult(CHN_AIN2);
+//	}
+
+  /* USER CODE END ad7705_2_Callback */
 }
 
 /* Private application code --------------------------------------------------*/
 /* USER CODE BEGIN Application */
 void HAL_GPIO_EXTI_Falling_Callback(uint16_t GPIO_Pin)
 {
+	BaseType_t xHigherPriorityTaskWoken;
+	xHigherPriorityTaskWoken = pdFALSE;
+
 	if(GPIO_Pin == AD_DRDY_Pin) {
 		//osSemaphoreRelease(DRDYSemHandle);
-		xTaskNotifyFromISR(AD7705TaskHandle, 0, eNoAction, pdFALSE);
+		//xTaskNotifyFromISR(AD7705TaskHandle, 1, eNoAction, pdFALSE);
+
+		vTaskNotifyGiveFromISR( AD7705TaskHandle, &xHigherPriorityTaskWoken );
+		portEND_SWITCHING_ISR( xHigherPriorityTaskWoken );
+
 	}
 }
 /* USER CODE END Application */

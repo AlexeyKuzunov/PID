@@ -1,9 +1,9 @@
 #MicroXplorer Configuration settings - do not modify
-FREERTOS.BinarySemaphores01=DRDYSem,Dynamic,NULL
 FREERTOS.FootprintOK=true
-FREERTOS.IPParameters=Tasks01,FootprintOK,Queues01,BinarySemaphores01,configUSE_NEWLIB_REENTRANT
+FREERTOS.IPParameters=Tasks01,FootprintOK,Queues01,configUSE_NEWLIB_REENTRANT,Timers01
 FREERTOS.Queues01=AD7705Queue,1,uint16_t,0,Dynamic,NULL,NULL
 FREERTOS.Tasks01=CalcTask,24,256,StartCalcTask,Default,NULL,Dynamic,NULL,NULL;AD7705Task,8,128,StartAD7705Task,Default,NULL,Dynamic,NULL,NULL
+FREERTOS.Timers01=DS18B20Timer,DS18B20Callback,osTimerPeriodic,Default,NULL,Dynamic,NULL;ad7705_2_Timer,ad7705_2_Callback,osTimerPeriodic,Default,NULL,Dynamic,NULL
 FREERTOS.configUSE_NEWLIB_REENTRANT=1
 File.Version=6
 GPIO.groupedBy=Group By Peripherals
